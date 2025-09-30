@@ -1,37 +1,50 @@
 <?xml version="1.0" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="800" height="600" style="background:black">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="100%" height="100%" style="background:black">
   <script type="text/javascript">
     <![CDATA[
     const svgNS = "http://www.w3.org/2000/svg";
-    const width = 800;
-    const height = 600;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
     const fontSize = 16;
     const columns = Math.floor(width / fontSize);
-    let drops = Array(columns).fill(0);
+    let drops = Array(columns).fill(1);
+    const chars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレゲゼデベペオォコソトノホモヨョロゴゾドボポ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     function matrix() {
       for(let i = 0; i < columns; i++) {
-        let char = String.fromCharCode(33 + Math.floor(Math.random() * 94));
-        let text = document.createElementNS(svgNS, "text");
+        const char = chars.charAt(Math.floor(Math.random() * chars.length));
+        const text = document.createElementNS(svgNS, "text");
         text.setAttribute("x", i * fontSize);
         text.setAttribute("y", drops[i] * fontSize);
-        text.setAttribute("fill", "#0F0");
+        // Gradient-like green
+        const greenShade = Math.floor(Math.random() * 156) + 100; // 100-255
+        text.setAttribute("fill", `rgb(0,${greenShade},0)`);
         text.setAttribute("font-family", "monospace");
         text.setAttribute("font-size", fontSize);
         text.textContent = char;
         document.documentElement.appendChild(text);
+
         drops[i]++;
-        if(drops[i] * fontSize > height) drops[i] = 0;
+        if(drops[i] * fontSize > height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
       }
 
-      // Remove old texts after a short delay
-      setTimeout(() => {
-        const texts = document.getElementsByTagName("text");
-        while(texts.length > columns) texts[0].remove();
-      }, 50);
+      // Remove old texts to prevent memory leak
+      const texts = document.getElementsByTagName("text");
+      while(texts.length > columns * 50) {
+        texts[0].remove();
+      }
     }
 
     setInterval(matrix, 50);
+
+    // Adjust SVG size on window resize
+    window.addEventListener("resize", () => {
+      const svg = document.documentElement;
+      svg.setAttribute("width", window.innerWidth);
+      svg.setAttribute("height", window.innerHeight);
+    });
     ]]>
   </script>
 </svg>
