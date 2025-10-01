@@ -1,3 +1,0 @@
-[vercel-takeover] [http] [high] https://alerts.dev.console.pagoda.co
-[vercel-takeover] [http] [high] https://dev.console.pagoda.co
-[vercel-takeover] [http] [high] https://contracts.dev.console.pagoda.co
