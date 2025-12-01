@@ -1,185 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- matrix-poc.svg
-     PoC: SVG with embedded JS that produces a Matrix-like rain.
-     For responsible security research and testing only.
--->
 <svg xmlns="http://www.w3.org/2000/svg"
-     xmlns:xlink="http://www.w3.org/1999/xlink"
      width="100%" height="100%"
      viewBox="0 0 800 600"
-     preserveAspectRatio="xMidYMid slice"
-     id="matrixSvg"
-     role="img"
-     aria-label="Matrix rain SVG PoC">
-  <desc>No system is Safe — SVG PoC</desc>
+     preserveAspectRatio="none">
 
-  <!-- background -->
-  <rect id="bg" x="0" y="0" width="100%" height="100%" fill="black"/>
+  <foreignObject width="100%" height="100%">
+    <body xmlns="http://www.w3.org/1999/xhtml" style="margin:0; padding:0;">
+      <canvas id="matrix" style="width:100%; height:100%; display:block;"></canvas>
 
-  <!-- optional title -->
-  <text id="title" x="8" y="18" font-family="monospace" font-size="14" fill="#00ff88">No system is Safe</text>
+      <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
 
-  <!-- group for characters -->
-  <g id="charsLayer"></g>
-
-  <!-- tiny styling inside SVG -->
-  <style><![CDATA[
-    .matrix-char { font-family: monospace, monospace; dominant-baseline: hanging; user-select: none; pointer-events: none; }
-    .matrix-title { font-weight: 700; }
-  ]]></style>
-
-  <!-- script (self-contained) -->
-  <script type="application/ecmascript"><![CDATA[
-    (function () {
-      // Config
-      const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      const DEFAULT_FONT = 14;         // px
-      const MAX_ACTIVE = 3000;
-      const BASE_SPEED = 2.2;
-
-      // Elements
-      const svg = document.getElementById('matrixSvg');
-      const charsLayer = document.getElementById('charsLayer');
-      const bg = document.getElementById('bg');
-
-      // State
-      let fontSize = DEFAULT_FONT;
-      let columns = 0;
-      let drops = [];
-      let active = [];
-      let speed = BASE_SPEED;
-      let raf = null;
-
-      // Helper to set SVG viewport to pixel dims (makes positioning simple)
-      function resize() {
-        const w = Math.max(200, window.innerWidth || 800);
-        const h = Math.max(200, window.innerHeight || 600);
-        svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
-        svg.setAttribute('width', w);
-        svg.setAttribute('height', h);
-        bg.setAttribute('width', w);
-        bg.setAttribute('height', h);
-
-        // adapt font based on width
-        fontSize = Math.max(10, Math.round(Math.min(20, w / 120)));
-        columns = Math.floor(w / fontSize) || 1;
-
-        // (re)initialise drops if count changed
-        const old = drops.length;
-        if (columns !== old) {
-          drops = new Array(columns).fill(0).map(() => Math.floor(Math.random() * -40));
+        function resize() {
+          canvas.width = canvas.clientWidth;
+          canvas.height = canvas.clientHeight;
         }
-      }
-
-      function createCharEl(x, y, isHead) {
-        const TX = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        TX.classList.add('matrix-char');
-        TX.setAttribute('x', x);
-        TX.setAttribute('y', y);
-        TX.setAttribute('font-size', isHead ? Math.round(fontSize * 1.05) : fontSize);
-        TX.setAttribute('fill', isHead ? '#e6fff2' : '#00ff00');
-        TX.textContent = CHARS.charAt(Math.floor(Math.random() * CHARS.length));
-        // internal fields for fade
-        TX._life = 1.0;
-        TX._fade = 0.02 + Math.random() * 0.035;
-        return TX;
-      }
-
-      function step() {
-        const w = parseInt(svg.getAttribute('width'), 10);
-        const h = parseInt(svg.getAttribute('height'), 10);
-
-        // For each column possibly create a new char at drops[i]
-        for (let i = 0; i < columns; i++) {
-          const x = i * fontSize;
-          const y = drops[i];
-
-          if (y >= 0 && y <= h + fontSize) {
-            const isHead = Math.random() > 0.88;
-            const el = createCharEl(x, y, isHead);
-            charsLayer.appendChild(el);
-            active.push(el);
-          }
-
-          // advance drop
-          drops[i] = y + (speed + Math.random() * 1.6);
-
-          // reset with small probability after it flows off bottom
-          if (drops[i] > h + Math.random() * 300) {
-            if (Math.random() > 0.97) {
-              drops[i] = Math.floor(Math.random() * -40);
-            }
-          }
-        }
-
-        // fade and clean active chars
-        for (let j = active.length - 1; j >= 0; j--) {
-          const e = active[j];
-          e._life -= e._fade;
-          if (e._life <= 0) {
-            if (e.parentNode) e.parentNode.removeChild(e);
-            active.splice(j, 1);
-          } else {
-            e.setAttribute('opacity', Math.max(0, e._life));
-          }
-        }
-
-        // trim if too many nodes
-        if (active.length > MAX_ACTIVE) {
-          const over = active.length - MAX_ACTIVE;
-          for (let k = 0; k < over; k++) {
-            const rem = active.shift();
-            if (rem && rem.parentNode) rem.parentNode.removeChild(rem);
-          }
-        }
-
-        raf = requestAnimationFrame(step);
-      }
-
-      // Start/stop
-      function start() {
-        if (!raf) raf = requestAnimationFrame(step);
-      }
-      function stop() {
-        if (raf) cancelAnimationFrame(raf);
-        raf = null;
-      }
-
-      // init
-      function init() {
         resize();
-        start();
-      }
 
-      // Responsive + lifecycle hooks
-      let rt = null;
-      window.addEventListener('resize', function () {
-        stop();
-        clearTimeout(rt);
-        rt = setTimeout(function () {
-          // clear existing characters to avoid misposition after resize
-          while (charsLayer.firstChild) charsLayer.removeChild(charsLayer.firstChild);
-          active = [];
+        const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 16;
+        let columns = 0;
+        let drops = [];
+
+        function init() {
+          columns = Math.floor(canvas.width / fontSize);
+          drops = Array(columns).fill(1);
+        }
+        init();
+
+        function draw() {
+          ctx.fillStyle = 'rgba(0,0,0,0.05)';
+          ctx.fillRect(0,0,canvas.width,canvas.height);
+
+          ctx.fillStyle = '#0F0';
+          ctx.font = fontSize + "px monospace";
+
+          drops.forEach((y, i) => {
+            const text = chars[Math.floor(Math.random()*chars.length)];
+            ctx.fillText(text, i * fontSize, y * fontSize);
+
+            if (y * fontSize > canvas.height && Math.random() > 0.975) {
+              drops[i] = 0;
+            }
+            drops[i]++;
+          });
+
+          requestAnimationFrame(draw);
+        }
+        draw();
+
+        window.addEventListener("resize", () => {
           resize();
-          start();
-        }, 120);
-      });
-
-      document.addEventListener('visibilitychange', function () {
-        if (document.hidden) stop();
-        else start();
-      });
-
-      // Expose debug controls (on window for easy PoC tinkering)
-      window._svgMatrixPoC = {
-        setSpeed: (v) => { speed = Number(v) || BASE_SPEED; },
-        setFont: (v) => { fontSize = Number(v) || fontSize; resize(); },
-        stop: stop,
-        start: start
-      };
-
-      // run
-      init();
-    })();
-  ]]></script>
+          init();
+        });
+      </script>
+    </body>
+  </foreignObject>
 </svg>
